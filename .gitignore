@@ -1,0 +1,4 @@
+.idea/
+*/__pycache__/
+parameters/*.json
+__pycache__/
