@@ -7,3 +7,8 @@ class Controller(mvc_controller.MVCController):
     def __init__(self, model):
 
         super().__init__(model=model)
+
+    def ui_new_message(self, user_name, message):
+
+        self.log("Got new message from ui for {}: '{}'.".format(user_name, message))
+        self.server.send_message(user_name, message)

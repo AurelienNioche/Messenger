@@ -19,7 +19,7 @@ class Server(Thread, Logger):
         self.shutdown_event = Event()
         self.waiting_event = Event()
 
-        self.server_address = self.param["website"] + "messenger.php"
+        self.server_address = self.param["website"] + "/messenger.php"
 
     def run(self):
 
@@ -40,7 +40,7 @@ class Server(Thread, Logger):
         assert "demandType" in kwargs and "userName" in kwargs and "message" in kwargs, \
             "A request to the server should contains a 'demandType', a 'userName' and a 'message'."
 
-        print("I will use the url: '{}'.".format(self.server_address))
+        self.log("I will use the url: '{}'.".format(self.server_address))
 
         data = parse.urlencode(kwargs).encode()
 
@@ -49,14 +49,14 @@ class Server(Thread, Logger):
 
         response = enc_resp.read().decode()
 
-        print("I called the page '{}' with a post request (args: '{}').".format(self.server_address, data))
-        print("I received the response: '{}'.".format(response))
+        self.log("I called the page '{}' with a post request (args: '{}').".format(self.server_address, data))
+        self.log("I received the response: '{}'.".format(response))
 
         return response
 
     def receive_messages(self):
 
-        print("I send a request for receiving the messages intended to server.")
+        self.log("I send a request for receiving the messages intended to server.")
 
         response = self.send_request(
             demandType="serverHears",
@@ -68,7 +68,7 @@ class Server(Thread, Logger):
             args = [i for i in response.split("/") if i]
             n_messages = int(args[1])
 
-            print("I received {} new message(s).".format(n_messages))
+            self.log("I received {} new message(s).".format(n_messages))
 
             if n_messages:
                 for arg in args[2:]:
@@ -76,7 +76,7 @@ class Server(Thread, Logger):
 
                     user_name, message = sep_args[0], sep_args[1]
 
-                    print("I send confirmation for message '{}'.".format(arg))
+                    self.log("I send confirmation for message '{}'.".format(arg))
                     self.send_request(
                         demandType="serverReceiptConfirmation",
                         userName=user_name,
@@ -85,7 +85,7 @@ class Server(Thread, Logger):
 
     def send_message(self, user_name, message):
 
-        print("I send a request for sending a message as the server.")
+        self.log("I send a request for sending a message as the server.")
 
         self.send_request(
             demandType="serverSpeaks",
@@ -95,7 +95,7 @@ class Server(Thread, Logger):
 
     def empty_tables(self):
 
-        print("I send a request for erasing tables.")
+        self.log("I send a request for erasing tables.")
 
         self.send_request(
             demandType="emptyTables",
