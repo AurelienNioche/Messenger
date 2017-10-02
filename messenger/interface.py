@@ -1,9 +1,9 @@
-from multiprocessing import Queue, Event
-
-from . graphics import mvc_interface, message_box, git_app, main_frame
+from . graphics import mvc_interface, git_app, main_frame
 
 
-class UI(mvc_interface.MVCInterface, message_box.MessageBoxApplication, git_app.GitApplication):
+class UI(mvc_interface.MVCInterface, git_app.GitApplication, main_frame.MainFrame):
+
+    app_name = "Messenger"
 
     def __init__(self, model):
 

@@ -21,7 +21,6 @@ class Model:
 
             self.controller.start()
             self.ui.setup()
-            self.ui.show()
             sys.exit(self.app.exec_())
 
         except Exception as e:

@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtWidgets
+import sys
 
 
 class LeftPanel(QtWidgets.QWidget):
@@ -107,11 +108,11 @@ class ConversationPicker(QtWidgets.QWidget):
         pass
 
 
-class Window(QtWidgets.QWidget):
+class MainFrame(QtWidgets.QWidget):
 
     def __init__(self):
 
-        QtWidgets.QWidget.__init__(self)
+        super().__init__()
         layout = QtWidgets.QHBoxLayout(self)
 
         left_panel = LeftPanel()
@@ -123,9 +124,8 @@ class Window(QtWidgets.QWidget):
 
 if __name__ == '__main__':
 
-    import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = Window()
+    window = MainFrame()
     window.resize(1000, 500)
     window.show()
     sys.exit(app.exec_())

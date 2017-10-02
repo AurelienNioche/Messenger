@@ -1,7 +1,8 @@
 from multiprocessing import Queue, Event
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QSettings
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QDesktopWidget
+from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QDesktopWidget
 
+from messenger.graphics import message_box
 from utils.logger import Logger
 
 
@@ -9,7 +10,8 @@ class Communicate(QObject):
     signal = pyqtSignal()
 
 
-class MVCInterface(QWidget, Logger):
+class MVCInterface(message_box.MessageBoxApplication, Logger):
+
     name = "Interface"
     app_name = "MVCInterface"
 
@@ -18,14 +20,12 @@ class MVCInterface(QWidget, Logger):
 
         super().__init__()
 
-        self.mod = model
+        self.model = model
 
         self.occupied = Event()
         self.queue = Queue()
         self.communicate = Communicate()
         self.settings = QSettings("HumanoidVsAndroid", self.app_name)
-
-        self.frames = dict()
 
     @property
     def dimensions(self):
@@ -51,6 +51,8 @@ class MVCInterface(QWidget, Logger):
         # Tell the model ui is ready
         self.ask_controller("ui_ready")
 
+        self.show()
+
     def setup_geometry(self):
 
         # Retrieve geometry
@@ -61,50 +63,34 @@ class MVCInterface(QWidget, Logger):
         except Exception as e:
             self.log(str(e))
 
-    def setup_widgets(self):
-
-        layout = QVBoxLayout()
-
-        grid = QGridLayout()
-
-        for frame in self.frames.values():
-            # noinspection PyCallByClass, PyTypeChecker, PyArgumentList
-            grid.addWidget(frame, 0, 0)
-
-        grid.setAlignment(Qt.AlignCenter)
-        layout.addLayout(grid, stretch=1)
-
-        self.setLayout(layout)
-
     def closeEvent(self, event):
 
         if self.isVisible() and self.show_question("Are you sure you want to quit?"):
 
-            self.save_geometry()
-            self.log("Close window")
-            self.close_window()
+            self.before_closing()
             event.accept()
 
         else:
             self.log("Ignore close window.")
             event.ignore()
 
+    def before_closing(self):
+
+        self.save_geometry()
+        self.ask_controller("ui_close_window")
+        self.log("Close window.")
+
     def save_geometry(self):
 
         self.settings.setValue("geometry", self.saveGeometry())
 
-    def show_frame(self, name):
-
-        for frame in self.frames.values():
-            frame.hide()
-
-        self.frames[name].show()
-
     def fatal_error(self, error_message):
 
         self.show_critical(msg="Fatal error.\nError message: '{}'.".format(error_message))
-        self.close_window()
+        self.before_closing()
         self.close()
+
+    # ---------------------- Communication ------------------ #
 
     def look_for_msg(self):
 
@@ -112,14 +98,7 @@ class MVCInterface(QWidget, Logger):
             self.occupied.set()
 
             msg = self.queue.get()
-            self.log("I received message '{}'.".format(msg))
-
-            command = eval("self.{}".format(msg[0]))
-            args = msg[1:]
-            if args:
-                command(*args)
-            else:
-                command()
+            self.handle_message(msg)
 
             # Able now to handle a new display instruction
             self.occupied.clear()
@@ -128,5 +107,19 @@ class MVCInterface(QWidget, Logger):
             # noinspection PyCallByClass, PyTypeChecker
             QTimer.singleShot(100, self.look_for_msg)
 
+    def handle_message(self, message):
+
+        command = message[0]
+        args = message[1]
+
+        func = getattr(self, command)
+
+        if args is not None:
+            func(*args)
+
+        else:
+            func()
+
     def ask_controller(self, instruction, arg=None):
+
         self.model.ask_controller(instruction, arg)

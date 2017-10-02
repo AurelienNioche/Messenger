@@ -4,7 +4,7 @@ from threading import Thread
 from utils.logger import Logger
 
 from messenger.control import data
-from  messenger.control import server
+from messenger.control import server
 
 
 class MVCController(Thread, Logger):
@@ -31,7 +31,7 @@ class MVCController(Thread, Logger):
             message = self.queue.get()
             self.handle_message(message)
 
-        self.close_program()
+        self.log("I'm dead.")
 
     def close_program(self):
 
@@ -51,12 +51,15 @@ class MVCController(Thread, Logger):
     def handle_message(self, message):
 
         command = message[0]
-        args = message[1:]
-        if len(args):
-            # eval("self.{}(*args)".format(command))
-            getattr()
+        args = message[1]
+
+        func = getattr(self, command)
+
+        if args is not None:
+            func(*args)
+
         else:
-            eval("self.{}()".format(command))
+            func()
 
     # ------------------------------ Server interface ---------------------------------------- #
 
@@ -84,3 +87,8 @@ class MVCController(Thread, Logger):
     def ui_ready(self):
 
         self.log("UI is ready.")
+
+    def ui_close_window(self):
+
+        self.log("UI close window.")
+        self.close_program()

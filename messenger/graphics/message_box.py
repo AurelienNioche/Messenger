@@ -57,5 +57,5 @@ class MessageBoxApplication(QtWidgets.QWidget):
     def show_info(self, msg):
         QtWidgets.QMessageBox().information(
             self, "", msg,
-            QMessageBox.Ok
+            QtWidgets.QMessageBox.Ok
         )
