@@ -2,7 +2,7 @@ from multiprocessing import Queue, Event
 from subprocess import getoutput
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QSettings
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QMessageBox, QDesktopWidget
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QDesktopWidget
 
 from .graphics import *
 from utils.logger import Logger
@@ -150,75 +150,6 @@ class UI(QWidget, Logger):
 
         self.frames[name].show()
 
-    def show_question(self, msg, question="", yes="Yes", no="No", focus="No"):
-        """question with customs buttons"""
-
-        msgbox = QMessageBox(self)
-        msgbox.setText(msg)
-        msgbox.setInformativeText(question)
-        msgbox.setIcon(QMessageBox.Question)
-        no_button = msgbox.addButton(no, QMessageBox.ActionRole)
-        yes_button = msgbox.addButton(yes, QMessageBox.ActionRole)
-        msgbox.setDefaultButton((no_button, yes_button)[focus == no])
-
-        msgbox.exec_()
-
-        return msgbox.clickedButton() == yes_button
-
-    def show_warning(self, msg):
-
-        button_reply = QMessageBox().warning(
-            self, "", msg,
-            QMessageBox.Ok
-        )
-
-        return button_reply == QMessageBox.Yes
-
-    def show_critical_and_retry(self, msg):
-
-        button_reply = QMessageBox().critical(
-            self, "", msg,  # Parent, title, message
-            QMessageBox.Close | QMessageBox.Retry,  # Buttons
-            QMessageBox.Retry  # Default button
-        )
-
-        return button_reply == QMessageBox.Retry
-
-    def show_critical_and_ok(self, msg):
-
-        button_reply = QMessageBox().critical(
-            self, "", msg,  # Parent, title, message
-            QMessageBox.Close | QMessageBox.Ok,  # Buttons
-            QMessageBox.Ok  # Default button
-        )
-
-        return button_reply == QMessageBox.Ok
-
-    def show_critical(self, msg):
-
-        QMessageBox().critical(
-            self, "", msg,  # Parent, title, message
-            QMessageBox.Close
-        )
-
-    def show_info(self, msg):
-
-        QMessageBox().information(
-            self, "", msg,
-            QMessageBox.Ok
-        )
-
-    def server_error(self, error_message):
-
-        retry = self.show_critical_and_retry(msg="Server error.\nError message: '{}'.".format(error_message))
-
-        if retry:
-            self.show_frame_setting_up()
-            self.retry_server()
-        else:
-            self.close_window()
-            self.close()
-
     def fatal_error(self, error_message):
 
         self.show_critical(msg="Fatal error.\nError message: '{}'.".format(error_message))
@@ -247,5 +178,5 @@ class UI(QWidget, Logger):
             # noinspection PyCallByClass, PyTypeChecker
             QTimer.singleShot(100, self.look_for_msg)
 
-    def run_game(self):
-        self.controller_queue.put(("ui_run_game", self.get_current_interface_parameters()))
+    def ask_controller(self, controller_function, arg=None):
+        self.controller_queue.put((controller_function, arg))

@@ -120,6 +120,7 @@ class Window(QtWidgets.QWidget):
         layout.addWidget(left_panel, alignment=QtCore.Qt.AlignHCenter)
         layout.addWidget(right_panel)
 
+
 if __name__ == '__main__':
 
     import sys
