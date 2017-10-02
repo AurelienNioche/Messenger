@@ -1,4 +1,4 @@
-from multiprocessing import Queue, Event
+from multiprocessing import Event
 from threading import Thread
 from urllib import parse, request
 
@@ -7,6 +7,7 @@ from utils.logger import Logger
 
 class Server(Thread, Logger):
     name = "Server"
+    time_between_requests = 1
 
     def __init__(self, controller):
 
@@ -15,10 +16,8 @@ class Server(Thread, Logger):
         self.cont = controller
         self.param = self.cont.get_parameters("network")
 
-        self.queue = Queue()
-
         self.shutdown_event = Event()
-        self.wait_event = Event()
+        self.waiting_event = Event()
 
         self.server_address = self.param["website"] + "messenger.php"
 
@@ -26,15 +25,15 @@ class Server(Thread, Logger):
 
         while not self.shutdown_event.is_set():
 
-            self.log("Waiting for a message...")
-            msg = self.queue.get()
-            self.log("I received msg '{}'.".format(msg))
-
-            if msg and msg[0] == "Go":
-                self.wait_event.clear()
-                self.serve()
+            self.receive_messages()
+            self.waiting_event.wait(self.time_between_requests)
 
         self.log("I'm dead.")
+
+    def shutdown(self):
+
+        self.waiting_event.set()
+        self.shutdown_event.set()
 
     def send_request(self, **kwargs):
 
@@ -55,48 +54,34 @@ class Server(Thread, Logger):
 
         return response
 
-    def serve(self):
+    def receive_messages(self):
 
-        while not self.wait_event.is_set():
+        print("I send a request for receiving the messages intended to server.")
 
-            try:
+        response = self.send_request(
+            demandType="serverHears",
+            userName="none",
+            message="none"
+        )
 
-                print("I send a request for receiving the messages intended to server.")
+        if "reply" in response:
+            args = [i for i in response.split("/") if i]
+            n_messages = int(args[1])
 
-                response = self.send_request(
-                    demandType="serverHears",
-                    userName="none",
-                    message="none"
-                )
+            print("I received {} new message(s).".format(n_messages))
 
-                if "reply" in response:
-                    args = [i for i in response.split("/") if i]
-                    n_messages = int(args[1])
+            if n_messages:
+                for arg in args[2:]:
+                    sep_args = arg.split("<>")
 
-                    print("I received {} new message(s).".format(n_messages))
+                    user_name, message = sep_args[0], sep_args[1]
 
-                    if n_messages:
-                        for arg in args[2:]:
-                            sep_args = arg.split("<>")
-
-                            user_name, message = sep_args[0], sep_args[1]
-
-                            print("I send confirmation for message '{}'.".format(arg))
-                            self.send_request(
-                                demandType="serverReceiptConfirmation",
-                                userName=user_name,
-                                message=message
-                            )
-
-            except Exception as e:
-                self.log("Got error '{}'.".format(e))
-
-    def shutdown(self):
-        self.wait_event.set()
-
-    def end(self):
-        self.shutdown_event.set()
-        self.queue.put("break")
+                    print("I send confirmation for message '{}'.".format(arg))
+                    self.send_request(
+                        demandType="serverReceiptConfirmation",
+                        userName=user_name,
+                        message=message
+                    )
 
     def send_message(self, user_name, message):
 

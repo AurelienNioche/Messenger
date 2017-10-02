@@ -26,3 +26,12 @@ class Model:
 
         except Exception as e:
             self.ui.fatal_error(error_message=str(e))
+
+    def ask_interface(self, instruction, arg=None):
+
+        self.ui.queue.put((instruction, arg))
+        self.ui.communicate.signal.emit()
+
+    def ask_controller(self, instruction, arg=None):
+
+        self.controller.queue.put((instruction, arg))
