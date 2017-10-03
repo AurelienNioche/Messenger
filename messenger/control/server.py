@@ -7,7 +7,7 @@ from utils.logger import Logger
 
 class Server(Thread, Logger):
     name = "Server"
-    time_between_requests = 1
+    time_between_requests = 2
 
     def __init__(self, controller):
 
@@ -32,8 +32,9 @@ class Server(Thread, Logger):
 
     def shutdown(self):
 
-        self.waiting_event.set()
+        self.log("I'm shutting down...")
         self.shutdown_event.set()
+        self.waiting_event.set()
 
     def send_request(self, **kwargs):
 

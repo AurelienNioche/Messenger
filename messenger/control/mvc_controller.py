@@ -61,6 +61,8 @@ class MVCController(Thread, Logger):
         else:
             func()
 
+        self.log("Message handled.")
+
     # ------------------------------ Server interface ---------------------------------------- #
 
     def stop_server(self):

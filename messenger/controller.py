@@ -12,3 +12,8 @@ class Controller(mvc_controller.MVCController):
 
         self.log("Got new message from ui for {}: '{}'.".format(user_name, message))
         self.server.send_message(user_name, message)
+
+    def ui_ready(self):
+
+        super().ui_ready()
+        self.server.start()
