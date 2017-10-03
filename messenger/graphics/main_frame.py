@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets
 import sys
 
 
@@ -215,9 +215,7 @@ class Entry(QtWidgets.QLabel):
 
     def select(self):
 
-        """
-        When user select this entry, proceed to this...
-        """
+        # When user select this entry, proceed to this...
 
         self.pending_messages = 0
         self.setText(self.user_name)
@@ -226,9 +224,7 @@ class Entry(QtWidgets.QLabel):
 
     def deselect(self):
 
-        """
-        When user selects an another entry, proceed to this...
-        """
+        # When user selects an another entry, proceed to this...
 
         self.change_background_color("transparent")
 
