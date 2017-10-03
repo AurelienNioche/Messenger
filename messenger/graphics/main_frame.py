@@ -394,6 +394,7 @@ class MainFrame(QtWidgets.QWidget):
 
         if self.conversations.selected == user_name:
             self.conversation_display.display(self.conversations.get_current_content())
+            self.conversation_picker.pick(user_name)
 
         else:
             self.conversation_picker.new_pending_message(user_name)
