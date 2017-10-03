@@ -128,6 +128,13 @@ class MessageWriter(QtWidgets.QWidget):
         self.interface.new_message_from_admin(self.message_content.toPlainText())
         self.message_content.setPlainText("")
 
+    def keyReleaseEvent(self, e):
+
+        if e.key() == QtCore.Qt.Key_Return:
+
+            self.interface.new_message_from_admin(self.message_content.toPlainText()[:-2])
+            self.message_content.setPlainText("")
+
 
 class ConversationDisplaySupport(QtWidgets.QWidget):
 
@@ -211,6 +218,9 @@ class MainFrame(QtWidgets.QWidget):
 
     def change_selected_conversation(self, user_name):
 
+        # Because SQL is case insensitive
+        user_name = user_name.lower().capitalize()
+
         if user_name not in self.conversations.dic.keys():
             self.conversations.create_new_conversation(user_name)
             self.conversation_picker.create_new_entry(user_name)
@@ -222,11 +232,17 @@ class MainFrame(QtWidgets.QWidget):
 
     def new_message_from_admin(self, message):
 
+        if self.conversations.selected is None:
+            self.left_panel.click_new_conversation()
+
         self.conversations.new_message_from_admin(message)
         self.conversation_display.display(self.conversations.get_current_content())
         self.ask_controller("ui_new_message", (self.conversations.selected, message))
 
     def new_message_from_user(self, user_name, message):
+
+        # Because SQL is case insensitive
+        user_name = user_name.lower().capitalize()
 
         if user_name not in self.conversations.dic.keys():
             self.conversations.create_new_conversation(user_name)
