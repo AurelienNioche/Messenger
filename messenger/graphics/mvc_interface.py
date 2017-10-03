@@ -1,6 +1,6 @@
 from multiprocessing import Queue, Event
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QSettings
-from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QDesktopWidget
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer, QSettings
+from PyQt5.QtWidgets import QDesktopWidget
 
 from messenger.graphics import message_box
 from utils.logger import Logger
