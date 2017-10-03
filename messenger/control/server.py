@@ -13,8 +13,8 @@ class Server(Thread, Logger):
 
         Thread.__init__(self)
 
-        self.cont = controller
-        self.param = self.cont.get_parameters("network")
+        self.controller = controller
+        self.param = self.controller.get_parameters("network")
 
         self.shutdown_event = Event()
         self.waiting_event = Event()
@@ -76,6 +76,8 @@ class Server(Thread, Logger):
                     sep_args = arg.split("<>")
 
                     user_name, message = sep_args[0], sep_args[1]
+
+                    self.controller.queue.put(("server_new_message", (user_name, message)))
 
                     self.log("I send confirmation for message '{}'.".format(arg))
                     self.send_request(

@@ -17,3 +17,8 @@ class Controller(mvc_controller.MVCController):
 
         super().ui_ready()
         self.server.start()
+
+    def server_new_message(self, user_name, message):
+
+        self.log("Got new message from distant server coming from {}: '{}'.".format(user_name, message))
+        self.ask_interface("controller_new_message", (user_name, message))
