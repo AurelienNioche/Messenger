@@ -79,7 +79,10 @@ class LeftPanel(QtWidgets.QWidget):
         if ok:
 
             self.parent().change_selected_conversation(user_name)
+            return True
 
+        else:
+            return False
 
 class RightPanel(QtWidgets.QWidget):
 
@@ -117,6 +120,7 @@ class MessageWriter(QtWidgets.QWidget):
         button_send = QtWidgets.QPushButton("Send")
         # noinspection PyUnresolvedReferences
         button_send.clicked.connect(self.send)
+        button_send.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
 
         # noinspection PyArgumentList
         layout.addWidget(self.message_content)
@@ -233,7 +237,10 @@ class MainFrame(QtWidgets.QWidget):
     def new_message_from_admin(self, message):
 
         if self.conversations.selected is None:
-            self.left_panel.click_new_conversation()
+            if self.left_panel.click_new_conversation():
+                pass
+            else:
+                return
 
         self.conversations.new_message_from_admin(message)
         self.conversation_display.display(self.conversations.get_current_content())
