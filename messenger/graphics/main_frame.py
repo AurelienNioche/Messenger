@@ -1,8 +1,12 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 import sys
 
 
 class Conversations:
+
+    """
+    Conversation manager which is not a qt object.
+    """
 
     def __init__(self, parent):
 
@@ -40,6 +44,11 @@ class Conversations:
 
 class Conversation:
 
+    """
+    A conversation is just a string with a name, isn't it ?
+    Not a qt object.
+    """
+
     def __init__(self, user_name):
 
         super().__init__()
@@ -53,6 +62,12 @@ class Conversation:
 
 
 class LeftPanel(QtWidgets.QWidget):
+
+    """
+    The left panel of the app that contains:
+    - a menu with the different conversations opened.
+    - a button for opening a new message.
+    """
 
     def __init__(self, parent, conversation_picker):
         # noinspection PyArgumentList
@@ -84,7 +99,14 @@ class LeftPanel(QtWidgets.QWidget):
         else:
             return False
 
+
 class RightPanel(QtWidgets.QWidget):
+
+    """
+    The right panel that contains:
+     - the content of the current opened conversation and
+     - the place where the admin writes.
+    """
 
     def __init__(self, parent, message_writer, conversation_display):
         # noinspection PyArgumentList
@@ -94,53 +116,72 @@ class RightPanel(QtWidgets.QWidget):
 
         self.conversation_display_support = \
             ConversationDisplaySupport(parent=parent, conversation_display=conversation_display)
-        self.message_writer = message_writer
+        self.message_writer_support = \
+            MessageWriterSupport(parent=parent, message_writer=message_writer)
 
         # noinspection PyArgumentList
         layout.addWidget(self.conversation_display_support)
         # noinspection PyArgumentList
-        layout.addWidget(self.message_writer)
+        layout.addWidget(self.message_writer_support)
 
         self.setLayout(layout)
 
 
-class MessageWriter(QtWidgets.QWidget):
+class MessageWriter(QtWidgets.QPlainTextEdit):
+
+    """
+    The widget where the admin enters the text he wants to send.
+    """
 
     def __init__(self, interface):
 
-        # noinspection PyArgumentList
-        QtWidgets.QWidget.__init__(self)
-
+        super().__init__()
         self.interface = interface
 
-        layout = QtWidgets.QHBoxLayout(self)
+    def keyPressEvent(self, event):
 
-        self.message_content = QtWidgets.QPlainTextEdit()
-
-        button_send = QtWidgets.QPushButton("Send")
-        # noinspection PyUnresolvedReferences
-        button_send.clicked.connect(self.send)
-        button_send.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-
-        # noinspection PyArgumentList
-        layout.addWidget(self.message_content)
-        # noinspection PyArgumentList
-        layout.addWidget(button_send)
+        if event.key() == QtCore.Qt.Key_Return:
+            self.send()
+        else:
+            super().keyPressEvent(event)
 
     def send(self):
 
-        self.interface.new_message_from_admin(self.message_content.toPlainText())
-        self.message_content.setPlainText("")
+        self.interface.new_message_from_admin(self.toPlainText())
+        self.setPlainText("")
 
-    def keyReleaseEvent(self, e):
 
-        if e.key() == QtCore.Qt.Key_Return:
+class MessageWriterSupport(QtWidgets.QWidget):
 
-            self.interface.new_message_from_admin(self.message_content.toPlainText()[:-2])
-            self.message_content.setPlainText("")
+    """
+    This widget contains the 'message writer' (the widget where the admin enters the text he wants to send).
+    """
+
+    def __init__(self, parent, message_writer):
+
+        # noinspection PyArgumentList
+        QtWidgets.QWidget.__init__(self, parent=parent)
+
+        self.message_writer = message_writer
+
+        layout = QtWidgets.QHBoxLayout(self)
+
+        button_send = QtWidgets.QPushButton("Send")
+        # noinspection PyUnresolvedReferences
+        button_send.clicked.connect(self.message_writer.send)
+        button_send.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+
+        # noinspection PyArgumentList
+        layout.addWidget(self.message_writer)
+        # noinspection PyArgumentList
+        layout.addWidget(button_send)
 
 
 class ConversationDisplaySupport(QtWidgets.QWidget):
+
+    """
+    This widget contains the  'conversation display'.
+    """
 
     def __init__(self, parent, conversation_display):
 
@@ -152,7 +193,70 @@ class ConversationDisplaySupport(QtWidgets.QWidget):
         layout.addWidget(conversation_display)
 
 
+class Entry(QtWidgets.QLabel):
+
+    """
+    Each instance of this class is a part of the 'conversation picker'.
+    """
+
+    def __init__(self, user_name, interface):
+
+        super().__init__()
+
+        self.user_name = user_name
+        self.interface = interface
+
+        self.setText(user_name)
+        self.setContentsMargins(10, 0, 10, 0)
+
+        self.pending_messages = 0
+
+        self.setAutoFillBackground(True)
+
+    def select(self):
+
+        """
+        When user select this entry, proceed to this...
+        """
+
+        self.pending_messages = 0
+        self.setText(self.user_name)
+
+        self.change_background_color("gray")
+
+    def deselect(self):
+
+        """
+        When user selects an another entry, proceed to this...
+        """
+
+        self.change_background_color("transparent")
+
+    def mousePressEvent(self, event):
+
+        self.interface.change_selected_conversation(self.user_name)
+
+    def new_pending_message(self):
+
+        self.pending_messages += 1
+        self.setText("{} <b>[{}]</b>".format(self.user_name, self.pending_messages))
+
+    def change_background_color(self, color):
+
+        colors = {
+            "gray": QtCore.Qt.lightGray, "transparent": QtCore.Qt.transparent}
+
+        p = self.palette()
+        p.setColor(self.backgroundRole(), colors[color])
+        self.setPalette(p)
+
+
 class ConversationPicker(QtWidgets.QTableWidget):
+
+    """
+    Contained in the left bar. Used for storing links for all the open discussions.
+    User click on entries to 'pick' one.
+    """
 
     def __init__(self, interface):
 
@@ -160,29 +264,49 @@ class ConversationPicker(QtWidgets.QTableWidget):
 
         self.interface = interface
 
+        # Hide the headers
         self.verticalHeader().hide()
-        self.horizontalHeader().setStretchLastSection(True)
         self.horizontalHeader().hide()
 
-        # noinspection PyUnresolvedReferences
-        self.clicked.connect(self.click_on_case)
+        # Expand first column
+        self.horizontalHeader().setStretchLastSection(True)
 
-        self.list = []
+        # To avoid perturbing selection of entries, disable focus
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
 
-    def create_new_entry(self, user_name):
+        # Container for entries
+        self.entries = {}
+
+    def create_new_entry(self, user_name, select=False):
+
+        # Create a new entry in the menu...
+        self.entries[user_name] = Entry(user_name, self.interface)
 
         self.insertRow(0)
-        self.setItem(0, 0, QtWidgets.QTableWidgetItem(user_name))
-        self.list.append(user_name)
-        self.selectRow(0)
+        self.setCellWidget(0, 0, self.entries[user_name])
 
-    def click_on_case(self, row_index):
+        if select:
+            self.entries[user_name].setFocus()
 
-        user_name = self.list[-(1 + row_index.row())]
-        self.interface.change_selected_conversation(user_name)
+    def new_pending_message(self, user_name):
+
+        # Will have as a consequence to add a number next to the name...
+        self.entries[user_name].new_pending_message()
+
+    def pick(self, user_name):
+
+        for key in self.entries:
+            self.entries[key].deselect()
+
+        self.entries[user_name].select()
 
 
 class ConversationDisplay(QtWidgets.QPlainTextEdit):
+
+    """
+    Contained in the right bar.
+    It is the widget used for displaying the content of a conversation.
+    """
 
     def __init__(self):
 
@@ -197,6 +321,10 @@ class ConversationDisplay(QtWidgets.QPlainTextEdit):
 
 
 class MainFrame(QtWidgets.QWidget):
+
+    """
+    Main frame of the messenger.
+    """
 
     def __init__(self):
 
@@ -222,38 +350,46 @@ class MainFrame(QtWidgets.QWidget):
 
     def change_selected_conversation(self, user_name):
 
+        self.log("Change selected_conversation (selected is '{}').".format(user_name))
+
         # Because SQL is case insensitive
         user_name = user_name.lower().capitalize()
 
         if user_name not in self.conversations.dic.keys():
+
             self.conversations.create_new_conversation(user_name)
-            self.conversation_picker.create_new_entry(user_name)
+            self.conversation_picker.create_new_entry(user_name, select=True)
 
         self.conversations.change_selected(user_name)
         content = self.conversations.get_current_content()
 
         self.conversation_display.display(content)
+        self.conversation_picker.pick(user_name)
 
     def new_message_from_admin(self, message):
 
-        if self.conversations.selected is None:
-            if self.left_panel.click_new_conversation():
-                pass
-            else:
-                return
+        if message:
 
-        self.conversations.new_message_from_admin(message)
-        self.conversation_display.display(self.conversations.get_current_content())
-        self.ask_controller("ui_new_message", (self.conversations.selected, message))
+            self.log("I will send message '{}'.".format(message))
+
+            if self.conversations.selected is None:
+                if not self.left_panel.click_new_conversation():
+                    self.log("Sending of the message cancelled.")
+                    return
+
+            self.conversations.new_message_from_admin(message)
+            self.conversation_display.display(self.conversations.get_current_content())
+            self.ask_controller("ui_new_message", (self.conversations.selected, message))
 
     def new_message_from_user(self, user_name, message):
 
         # Because SQL is case insensitive
         user_name = user_name.lower().capitalize()
 
-        if user_name not in self.conversations.dic.keys():
+        new_user = user_name not in self.conversations.dic.keys()
+        if new_user:
             self.conversations.create_new_conversation(user_name)
-            self.conversation_picker.create_new_entry(user_name)
+            self.conversation_picker.create_new_entry(user_name, select=self.conversations.selected is None)
 
         self.conversations.new_message_from_user(user_name, message)
 
@@ -262,6 +398,9 @@ class MainFrame(QtWidgets.QWidget):
 
         if self.conversations.selected == user_name:
             self.conversation_display.display(self.conversations.get_current_content())
+
+        else:
+            self.conversation_picker.new_pending_message(user_name)
 
 
 if __name__ == '__main__':

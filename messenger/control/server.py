@@ -24,8 +24,10 @@ class Server(Thread, Logger):
     def run(self):
 
         while not self.shutdown_event.is_set():
-
-            self.receive_messages()
+            try:
+                self.receive_messages()
+            except Exception as e:
+                self.log("Got error: '{}'.".format(e))
             self.waiting_event.wait(self.time_between_requests)
 
         self.log("I'm dead.")
@@ -50,14 +52,14 @@ class Server(Thread, Logger):
 
         response = enc_resp.read().decode()
 
-        self.log("I called the page '{}' with a post request (args: '{}').".format(self.server_address, data))
-        self.log("I received the response: '{}'.".format(response))
+        # self.log("I called the page '{}' with a post request (args: '{}').".format(self.server_address, data))
+        # self.log("I received the response: '{}'.".format(response))
 
         return response
 
     def receive_messages(self):
 
-        self.log("I send a request for receiving the messages intended to server.")
+        self.log("I send a request for collecting the messages.")
 
         response = self.send_request(
             demandType="serverHears",
@@ -88,7 +90,7 @@ class Server(Thread, Logger):
 
     def send_message(self, user_name, message):
 
-        self.log("I send a request for sending a message as the server.")
+        self.log("I send a message for '{}': '{}'.".format(user_name, message))
 
         self.send_request(
             demandType="serverSpeaks",
